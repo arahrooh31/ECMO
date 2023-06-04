@@ -9,6 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, roc_curve, auc, precision_score, recall_score, f1_score
 import matplotlib.pyplot as plt
 from sklearn.impute import SimpleImputer, KNNImputer
+from sklearn.model_selection import cross_val_score
 
 # Load the data
 df = pd.read_csv("ECMO_data_processed.csv")
@@ -51,11 +52,15 @@ plt.xlim([0.0, 1.0])
 plt.ylim([0.0, 1.05])
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
-plt.title('XGBoost Model Receiver Operating Characteristic')
+plt.title('XGBoost Receiver Operating Characteristic')
 plt.legend(loc="lower right")
 plt.savefig('xgboost_roc.png')
 #plt.show()
-results.append(['XGBoost', accuracy, precision, recall, f1, roc_auc])
+scores = cross_val_score(XGB_model, X_train, y_train, cv=5)
+print("Cross-validation scores:", scores)
+print("Mean accuracy:", scores.mean())
+print("Standard deviation:", scores.std())
+results.append(['XGBoost', accuracy, precision, recall, f1, roc_auc, scores, scores.mean(), scores.std()])
 
 
 # Handle missing values
@@ -92,12 +97,15 @@ plt.xlim([0.0, 1.0])
 plt.ylim([0.0, 1.05])
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
-plt.title('SVM model Receiver Operating Characteristic')
+plt.title('SVM Receiver Operating Characteristic')
 plt.legend(loc="lower right")
 plt.savefig('svm_roc.png')
 #plt.show()
-results.append(['SVM', accuracy, precision, recall, f1, roc_auc])
-
+scores = cross_val_score(SVM_model, X_train_imputed, y_train, cv=5)
+print("Cross-validation scores:", scores)
+print("Mean accuracy:", scores.mean())
+print("Standard deviation:", scores.std())
+results.append(['SVM', accuracy, precision, recall, f1, roc_auc, scores, scores.mean(), scores.std()])
 
 # Random Forest Model
 RF_model = RandomForestClassifier()
@@ -121,12 +129,15 @@ plt.xlim([0.0, 1.0])
 plt.ylim([0.0, 1.05])
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
-plt.title('Random Forest model Receiver Operating Characteristic')
+plt.title('Random Forest  Receiver Operating Characteristic')
 plt.legend(loc="lower right")
 plt.savefig('random_forest_roc.png')
 #plt.show()
-results.append(['Random Forest', accuracy, precision, recall, f1, roc_auc])
-
+scores = cross_val_score(RF_model, X_train_imputed, y_train, cv=5)
+print("Cross-validation scores:", scores)
+print("Mean accuracy:", scores.mean())
+print("Standard deviation:", scores.std())
+results.append(['Random Forest', accuracy, precision, recall, f1, roc_auc, scores, scores.mean(), scores.std()])
 
 # Logistic Regression Model
 LR_model = LogisticRegression()
@@ -154,12 +165,16 @@ plt.title('Logistic Regression Receiver Operating Characteristic')
 plt.legend(loc="lower right")
 #plt.show()
 plt.savefig('logistic_regression_roc.png')
-results.append(['Logistic Regression', accuracy, precision, recall, f1, roc_auc])
+scores = cross_val_score(LR_model, X_train_imputed, y_train, cv=5)
+print("Cross-validation scores:", scores)
+print("Mean accuracy:", scores.mean())
+print("Standard deviation:", scores.std())
+results.append(['Logistic Regression', accuracy, precision, recall, f1, roc_auc, scores, scores.mean(), scores.std()])
 
 
 
 # Create a DataFrame from the results list
-results_df = pd.DataFrame(results, columns=['Model', 'Accuracy', 'Precision', 'Recall', 'F1 Score', 'ROC AUC'])
+results_df = pd.DataFrame(results, columns=['Model', 'Accuracy', 'Precision', 'Recall', 'F1 Score', 'ROC AUC', 'Cross-validation scores', 'Mean accuracy', 'Standard deviation' ])
 results_df
 
 
@@ -265,3 +280,5 @@ print(all_models_correct_cases)
 all_models_wrong_cases = error_analysis_df[all_models_wrong]
 print('Cases where all models got the prediction wrong:')
 print(all_models_wrong_cases)
+
+
