@@ -10,6 +10,7 @@ from sklearn.metrics import accuracy_score, roc_curve, auc, precision_score, rec
 import matplotlib.pyplot as plt
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.model_selection import cross_val_score
+import numpy as np
 
 # Load the data
 df = pd.read_csv("ECMO_data_processed.csv")
@@ -21,6 +22,10 @@ y = df['outcome']
 
 # Split the data into train and test sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+
+# # Split the existing test set into a new test set and a holdout set
+# X_test, X_holdout, y_test, y_holdout = train_test_split(X_test, y_test, test_size=0.5, random_state=42)
 
 # # Scale the features using StandardScaler
 # scaler = StandardScaler()
@@ -124,6 +129,7 @@ print('Accuracy:', accuracy)
 print('Precision:', precision)
 print('Recall:', recall)
 print('F1 Score:', f1)
+
 y_prob = RF_model.predict_proba(X_test_imputed)[:, 1]
 fpr, tpr, thresholds = roc_curve(y_test, y_prob)
 roc_auc = auc(fpr, tpr)
@@ -138,11 +144,45 @@ plt.title('Random Forest  Receiver Operating Characteristic')
 plt.legend(loc="lower right")
 plt.savefig('random_forest_roc.png')
 #plt.show()
+
 scores = cross_val_score(RF_model, X_train_imputed, y_train, cv=5)
 print("Cross-validation scores:", scores)
 print("Mean accuracy:", scores.mean())
 print("Standard deviation:", scores.std())
 results.append(['Random Forest', accuracy, precision, recall, f1, roc_auc, scores, scores.mean(), scores.std()])
+
+importance = RF_model.feature_importances_
+feature_names = X_train.columns
+sorted_idx = np.argsort(importance)
+
+plt.figure()
+plt.barh(range(len(sorted_idx)), importance[sorted_idx], align='center')
+plt.yticks(range(len(sorted_idx)), feature_names[sorted_idx])
+plt.xlabel('Feature Importance')
+plt.ylabel('Features')
+plt.title('Random Forest Feature Importance')
+plt.tight_layout()  # Ensures that the labels fit within the figure
+plt.savefig('random_forest_feature_importance.png')
+
+importance = RF_model.feature_importances_
+feature_names = X_train.columns
+sorted_idx = np.argsort(importance)[-30:]  # Get the indices of the 20 most important features
+
+indices = np.argsort(importance)[::-1]
+
+# Print feature ranking
+print("Feature ranking:")
+for f in range(X_train.shape[1]):
+    print(f"{f + 1}. Feature '{X_train.columns[indices[f]]}' ({importance[indices[f]]})")
+
+plt.figure(figsize=(10, 8))  # Adjust the figure size as needed
+plt.barh(range(len(sorted_idx)), importance[sorted_idx], align='center')
+plt.yticks(range(len(sorted_idx)), [feature_names[i] for i in sorted_idx])
+plt.xlabel('Feature Importance')
+plt.ylabel('Features')
+plt.title('Random Forest Feature Importance (Top 30)')
+plt.tight_layout()  # Ensures that the labels fit within the figure
+plt.savefig('random_forest_feature_importance_top30.png')
 
 # Logistic Regression Model
 LR_model = LogisticRegression()
